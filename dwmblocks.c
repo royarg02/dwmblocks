@@ -1,3 +1,4 @@
+#include<errno.h>
 #include<stdlib.h>
 #include<stdio.h>
 #include<string.h>
@@ -59,18 +60,24 @@ static int returnStatus = 0;
 //opens process *cmd and stores output in *output
 void getcmd(const Block *block, char *output)
 {
+	char *s;
 	if (block->signal)
 		*output++ = block->signal;
-	strcpy(output, block->icon);
 	FILE *cmdf = popen(block->command, "r");
 	if (!cmdf)
 		return;
 	int i = strlen(block->icon);
-	fgets(output+i, CMDLENGTH-i-delimLen, cmdf);
+	char tmpstr[CMDLENGTH] = "";
+	do {
+		s = fgets(tmpstr, CMDLENGTH-i-delimLen, cmdf);
+	} while (!s && errno == EINTR);
+	pclose(cmdf);
+
+	strcpy(output, block->icon);
+	strcpy(output+i, tmpstr);
 	i = strlen(output);
 	if (i == 0) {
 		//return if block and command output are both empty
-		pclose(cmdf);
 		return;
 	}
 	if (delim[0] != '\0') {
@@ -80,7 +87,6 @@ void getcmd(const Block *block, char *output)
 	}
 	else
 		output[i++] = '\0';
-	pclose(cmdf);
 }
 
 void getcmds(int time)
