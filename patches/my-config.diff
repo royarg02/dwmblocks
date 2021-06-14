@@ -17,5 +17,5 @@ index 9c22d68..e4ac2c3 100644
  
  //sets delimeter between status commands. NULL character ('\0') means no delimeter.
 -static char delim[] = " | ";
-+static char delim[] = " ";
++static char delim[] = " • ";
  static unsigned int delimLen = 5;
