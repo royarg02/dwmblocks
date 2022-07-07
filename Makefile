@@ -28,9 +28,12 @@ clean:
 install: dwmblocks
 	mkdir -p ${DESTDIR}${PREFIX}/bin
 	cp -f dwmblocks ${DESTDIR}${PREFIX}/bin
+	cp -f blocks/sb-* ${DESTDIR}${PREFIX}/bin
 	chmod 755 ${DESTDIR}${PREFIX}/bin/dwmblocks
+	chmod 755 ${DESTDIR}${PREFIX}/bin/sb-*
 
 uninstall:
 	rm -f ${DESTDIR}${PREFIX}/bin/dwmblocks
+	rm -f ${DESTDIR}${PREFIX}/bin/sb-*
 
 .PHONY: all options clean install uninstall
