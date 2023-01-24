@@ -90,7 +90,7 @@ run() {
   columns="$(tput cols)"
   rows="$(tput lines)"
   # Set a flag if figlet(1) should be used to display time
-  command -v figlet > /dev/null 2>&1 || [ "$rows" -gt 13 ] && [ "$columns" -gt 60 ] && figlet_time="Y"
+  command -v figlet > /dev/null 2>&1 && [ "$rows" -gt 13 ] && [ "$columns" -gt 60 ] && figlet_time="Y"
   # Display the time
   disp_time
   # Display the date
