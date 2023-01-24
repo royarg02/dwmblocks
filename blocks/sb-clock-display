@@ -1,8 +1,8 @@
 #!/bin/sh
 
-# Displays the time and calendar, updated every second
+# Displays the current time and calendar
 
-# Centers provided text horizontally.
+# Centers provided text horizontally
 centerh() {
   length="${#1}"
   printf "%$(((columns+length)/2))s\n" "$1"
@@ -16,16 +16,13 @@ centerh() {
 #
 # 0 => hidden, 1 => 3 months, 2 => 12 months
 is_cal_hidden() {
+  if [ "$rows" -lt 10 ] || [ "$columns" -lt 75 ]; then
+    return 0
+  fi
   if [ "$figlet_time" ]; then
-    if [ "$rows" -lt 13 ] || [ "$columns" -lt 75 ]; then
-      return 0
-    fi
     [ "$rows" -gt 38 ] && return 2
     return 1
   else
-    if [ "$rows" -lt 10 ] || [ "$columns" -lt 75 ]; then
-      return 0
-    fi
     [ "$rows" -gt 35 ] && return 2
     return 1
   fi
@@ -67,8 +64,10 @@ disp_time() {
           figlet -tcW -f standard "$curr_time"
         elif [ "$rows" -gt 13 ]; then
           figlet -tcW -f small "$curr_time"
-        else
+        elif [ "$rows" -gt 11 ]; then
           figlet -tcW -f digital "$curr_time"
+        else
+          centerh "$curr_time"
         fi ;;
       2)
         if [ "$rows" -gt 45 ]; then
@@ -89,8 +88,9 @@ run() {
   # Get the dimensions of the terminal
   columns="$(tput cols)"
   rows="$(tput lines)"
-  # Set a flag if figlet(1) should be used to display time
-  command -v figlet > /dev/null 2>&1 && [ "$rows" -gt 13 ] && [ "$columns" -gt 60 ] && figlet_time="Y"
+  # Set a flag if figlet(1) should be used to display time and the terminal is
+  # wide enough
+  command -v figlet > /dev/null 2>&1 && [ "$columns" -gt 60 ] && figlet_time="Y"
   # Display the time
   disp_time
   # Display the date
@@ -101,6 +101,4 @@ run() {
   done
 }
 
-# If the terminal is resized, run the main sequence again
-trap run WINCH
 run
