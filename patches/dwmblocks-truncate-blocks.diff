@@ -1,0 +1,15 @@
+diff --git a/dwmblocks.c b/dwmblocks.c
+index ef55f3d..b4f5945 100644
+--- a/dwmblocks.c
++++ b/dwmblocks.c
+@@ -83,6 +83,9 @@ void getcmd(const Block *block, char *output)
+ 	do {
+ 		s = fgets(tmpstr, CMDLENGTH-i-delimLen, cmdf);
+ 	} while (!s && errno == EINTR);
++	if (fgetc(cmdf) != EOF) {
++		strncpy(&tmpstr[CMDLENGTH - i - delimLen - 4], "...", 4);
++	}
+ 	pclose(cmdf);
+ 
+ 	strcpy(output, block->icon);
+

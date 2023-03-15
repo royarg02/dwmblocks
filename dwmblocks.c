@@ -83,6 +83,9 @@ void getcmd(const Block *block, char *output)
 	do {
 		s = fgets(tmpstr, CMDLENGTH-i-delimLen, cmdf);
 	} while (!s && errno == EINTR);
+	if (fgetc(cmdf) != EOF) {
+		strncpy(&tmpstr[CMDLENGTH - i - delimLen - 4], "...", 4);
+	}
 	pclose(cmdf);
 
 	strcpy(output, block->icon);
