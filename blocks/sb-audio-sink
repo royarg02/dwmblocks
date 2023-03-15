@@ -1,32 +1,35 @@
 #!/bin/sh
 
-# Prints the current volume of default pulseaudio sink
+# Prints the current volume of default wireplumber sink
 
-SINK="@DEFAULT_SINK@"
-controller="pulsemixer"
+SINK="@DEFAULT_AUDIO_SINK@"
+command -v ncpamixer > /dev/null 2>&1 && controller="ncpamixer" || controller="pulsemixer"
 
-while [ -z "$vol" ]; do
-  vol="$(pactl get-sink-volume $SINK | sed -n 's/.* \([0-9]\+\)%.*/\1/p')"
+until [ -n "$vol" ]; do
+  vol="$(wpctl get-volume $SINK)"
 done
 
+level="$(echo "$vol" | cut -d' ' -f2 | xargs -I @ printf "%0.f" @e2)"
+muted="$(echo "$vol" | cut -d' ' -f3)"
+
 case $BUTTON in
-  1) pactl set-sink-mute "$SINK" toggle ;;
+  1) wpctl set-mute "$SINK" toggle ;;
   2) setsid -f "$TERMINAL" -e "$controller" ;;
   3) setsid -f "$TERMINAL" -e "$EDITOR" "$0";;
-  4) pactl set-sink-volume "$SINK" +5% ;;
-  5) pactl set-sink-volume "$SINK" -5% ;;
+  4) wpctl set-volume "$SINK" 5%+ ;;
+  5) wpctl set-volume "$SINK" 5%- ;;
 esac
 
-if pactl get-sink-mute "$SINK" | grep -q 'yes' ; then
-  icon=🔇
-elif [ "$vol" -lt 30 ]; then
+if [ "$muted" ] ; then
+  icon="🔇"
+elif [ "$level" -lt 30 ]; then
   icon="🔈"
-elif [ "$vol" -lt 70 ]; then
+elif [ "$level" -lt 70 ]; then
   icon="🔉"
-elif [ "$vol" -lt 100 ]; then
+elif [ "$level" -lt 100 ]; then
   icon="🔊"
 else
   icon="📢"
 fi
 
-printf "%s %s%%" "$icon" "$vol"
+printf "%s %s%%" "$icon" "$level"

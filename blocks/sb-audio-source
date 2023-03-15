@@ -1,22 +1,25 @@
 #!/bin/sh
 
-# Prints the current volume of default pulseaudio source.
+# Prints the current volume of default wireplumbler source.
 
-SOURCE="@DEFAULT_SOURCE@"
-controller="pulsemixer"
+SOURCE="@DEFAULT_AUDIO_SOURCE@"
+command -v ncpamixer > /dev/null 2>&1 && controller="ncpamixer" || controller="pulsemixer"
 
-while [ -z "$vol" ]; do
-  vol="$(pactl get-source-volume $SOURCE | sed -n 's/.* \([0-9]\+\)%.*/\1/p')"
+until [ -n "$vol" ]; do
+  vol="$(wpctl get-volume $SOURCE)"
 done
 
+level="$(echo "$vol" | cut -d' ' -f2 | xargs -I @ printf "%0.f" @e2)"
+muted="$(echo "$vol" | cut -d' ' -f3)"
+
 case $BUTTON in
-  1) pactl set-source-mute "$SOURCE" toggle ;;
+  1) wpctl set-mute "$SOURCE" toggle ;;
   2) setsid -f "$TERMINAL" -e "$controller" ;;
   3) setsid -f "$TERMINAL" -e "$EDITOR" "$0";;
-  4) pactl set-source-volume "$SOURCE" +5% ;;
-  5) pactl set-source-volume "$SOURCE" -5% ;;
+  4) wpctl set-volume "$SOURCE" 5%+ ;;
+  5) wpctl set-volume "$SOURCE" 5%- ;;
 esac
 
-pactl get-source-mute "$SOURCE" | grep -q 'yes' && icon=🙊 || icon=🎙 
+[ "$muted" ] && icon=🙊 || icon=🎙
 
-printf "%s %s%%" "$icon" "$vol"
+printf "%s %s%%" "$icon" "$level"
