@@ -56,7 +56,6 @@ static void (*writestatus) () = pstdout;
 static char statusbar[LENGTH(blocks)][CMDLENGTH] = {0};
 static char statusstr[2][STATUSLENGTH];
 static int statusContinue = 1;
-static int returnStatus = 0;
 
 int gcd(int a, int b)
 {
@@ -185,7 +184,7 @@ void statusloop()
 {
 	struct timespec tosleep;
 	setupsignals();
-	unsigned int i = 0, interval;
+	unsigned int i = 0, interval = 0;
     for(unsigned int i = 0; i < LENGTH(blocks); i++){
         if(blocks[i].interval){
             interval = gcd(blocks[i].interval, interval);
