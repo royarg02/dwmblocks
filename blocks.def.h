@@ -7,7 +7,7 @@ static const Block blocks[] = {
   {"",      "sb-audio-source",             0,               3},
   {"",      "sb-memory",                   1,               2},
   {"",      "sb-clock",                   60,               1},
-  {"",      "sb-now-playing",              1,               8},
+  {"",      "sb-now-playing",              1,               7},
 };
 
 //sets delimeter between status commands. NULL character ('\0') means no delimeter.
