@@ -14,10 +14,13 @@ centerh() {
 # Uses the dimensions of the terminal alongwith whether figlet(1) is used to
 # display the time to determine the returned value.
 #
-# 0 => hidden, 1 => 3 months, 2 => 12 months
+# 0 => hidden, 1 => 3 months, 2 => 12 months, 3 => 1 month
 is_cal_hidden() {
-  if [ "$rows" -lt 10 ] || [ "$columns" -lt 75 ]; then
+  if [ "$rows" -lt 11 ] || [ "$columns" -lt 25 ]; then
     return 0
+  fi
+  if [ "$columns" -lt 75 ]; then
+    return 3
   fi
   if [ "$figlet_time" ]; then
     [ "$rows" -gt 38 ] && return 2
@@ -32,8 +35,9 @@ is_cal_hidden() {
 disp_cal() {
   case "$(is_cal_hidden; echo $?)" in
     0) return ;;
-    1) cal -3yw | tail -n +2 ;;
+    1) echo; cal -3w ;;
     2) cal -yw | tail -n +2 ;;
+    3) echo; cal -w ;;
   esac
 }
 
@@ -57,14 +61,12 @@ disp_time() {
         else
           centerh "$curr_time"
         fi ;;
-      1)
+      1|3)
         if [ "$rows" -gt 17 ]; then
           figlet -tcW -f big "$curr_time"
         elif [ "$rows" -gt 15 ]; then
           figlet -tcW -f standard "$curr_time"
-        elif [ "$rows" -gt 13 ]; then
-          figlet -tcW -f small "$curr_time"
-        elif [ "$rows" -gt 11 ]; then
+        elif [ "$rows" -gt 12 ]; then
           figlet -tcW -f digital "$curr_time"
         else
           centerh "$curr_time"
