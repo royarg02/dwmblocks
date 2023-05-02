@@ -8,17 +8,23 @@ case $BUTTON in
   5) playerctl position 10- ;;
 esac
 
+ARTIST="$(playerctl metadata artist)"
+TITLE="$(playerctl metadata title)"
+
+[ -n "$ARTIST" ] && [ -n "$TITLE" ] && SEPARATOR=" - "
+[ -z "$ARTIST" ] && [ -z "$TITLE" ] && NOMETADATA=true
+
 case "$(playerctl status -s)" in
   # Media players generally show the pause icon while playing and the play icon
   # while paused.
-  "Paused") STATUS="▶️" ;;
-  "Playing") STATUS="⏸️" ;;
+  "Paused")
+    STATUS="▶️"
+    [ "$NOMETADATA" ] && STATUS="$STATUS Media playback paused" ;;
+  "Playing")
+    STATUS="⏸️"
+    [ "$NOMETADATA" ] && STATUS="$STATUS Currently playing media" ;;
   *) exit 1 ;;
 esac
 
-ARTIST="$(playerctl metadata artist)"
-TITLE="$(playerctl metadata title)"
-[ -n "$ARTIST" ] && [ -n "$TITLE" ] && SEPARATOR=" - "
-
-printf "%s%s%s%s" "$STATUS" "$TITLE" "$SEPARATOR" "$ARTIST"
+printf "%s %s%s%s" "$STATUS" "$TITLE" "$SEPARATOR" "$ARTIST"
 
