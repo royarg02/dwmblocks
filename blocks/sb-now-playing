@@ -8,8 +8,8 @@ case $BUTTON in
   5) playerctl position 10- ;;
 esac
 
-ARTIST="$(playerctl metadata artist)"
-TITLE="$(playerctl metadata title)"
+ARTIST="$(playerctl -s metadata artist)"
+TITLE="$(playerctl -s metadata title)"
 
 [ -n "$ARTIST" ] && [ -n "$TITLE" ] && SEPARATOR=" - "
 [ -z "$ARTIST" ] && [ -z "$TITLE" ] && NOMETADATA=true
