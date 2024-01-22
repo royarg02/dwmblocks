@@ -10,6 +10,6 @@ static const Block blocks[] = {
   {"",      "sb-now-playing",              1,               7},
 };
 
-//sets delimeter between status commands. NULL character ('\0') means no delimeter.
+//sets delimiter between status commands. NULL character ('\0') means no delimiter.
 static char delim[] = " • ";
 static unsigned int delimLen = 5;
