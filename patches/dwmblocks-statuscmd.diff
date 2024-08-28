@@ -1,5 +1,5 @@
 diff --git a/dwmblocks.c b/dwmblocks.c
-index c8f77b7..adb1e11 100644
+index c8f77b7..3828be3 100644
 --- a/dwmblocks.c
 +++ b/dwmblocks.c
 @@ -3,6 +3,7 @@
@@ -27,7 +27,7 @@ index c8f77b7..adb1e11 100644
  void pstdout();
  #ifndef NO_X
  void setroot();
-@@ -60,24 +61,27 @@ void getcmd(const Block *block, char *output)
+@@ -60,19 +61,22 @@ void getcmd(const Block *block, char *output)
  {
  	//make sure status is same until output is ready
  	char tempstatus[CMDLENGTH] = {0};
@@ -54,12 +54,6 @@ index c8f77b7..adb1e11 100644
  		}
  		else
  			tempstatus[i++] = '\0';
-+		strcpy(output, tempstatus);
- 	}
--	strcpy(output, tempstatus);
- 	pclose(cmdf);
- }
- 
 @@ -103,15 +107,18 @@ void getsigcmds(unsigned int signal)
  
  void setupsignals()

@@ -70,6 +70,9 @@ void getcmd(const Block *block, char *output)
 		return;
 	int i = strlen(block->icon);
 	fgets(statusptr+i, CMDLENGTH-i-delimLen, cmdf);
+	if (fgetc(cmdf) != EOF) {
+		strncpy(statusptr + CMDLENGTH - delimLen - 4, "...", 4);
+	}
 	i = strlen(statusptr);
 	//if block and command output are both not empty
 	if (i != 0) {
@@ -80,8 +83,8 @@ void getcmd(const Block *block, char *output)
 		}
 		else
 			tempstatus[i++] = '\0';
-		strcpy(output, tempstatus);
 	}
+	strcpy(output, tempstatus);
 	pclose(cmdf);
 }
 
