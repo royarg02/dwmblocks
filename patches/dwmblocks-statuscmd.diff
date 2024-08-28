@@ -1,14 +1,5 @@
-From 1669878c08607f481e3f879d6914fc4d3c9d7206 Mon Sep 17 00:00:00 2001
-From: Daniel Bylinka <daniel.bylinka@gmail.com>
-Date: Fri, 2 Apr 2021 19:20:17 +0200
-Subject: [PATCH] [statuscmd] Format status text and handle button signals
-
----
- dwmblocks.c | 48 +++++++++++++++++++++++++++++++++++++++++-------
- 1 file changed, 41 insertions(+), 7 deletions(-)
-
 diff --git a/dwmblocks.c b/dwmblocks.c
-index ded717c..78fdeb5 100644
+index c8f77b7..adb1e11 100644
 --- a/dwmblocks.c
 +++ b/dwmblocks.c
 @@ -3,6 +3,7 @@
@@ -36,16 +27,40 @@ index ded717c..78fdeb5 100644
  void pstdout();
  #ifndef NO_X
  void setroot();
-@@ -58,6 +59,8 @@ static int returnStatus = 0;
- //opens process *cmd and stores output in *output
- void getcmd(const Block *block, char *output)
+@@ -60,24 +61,27 @@ void getcmd(const Block *block, char *output)
  {
+ 	//make sure status is same until output is ready
+ 	char tempstatus[CMDLENGTH] = {0};
+-	strcpy(tempstatus, block->icon);
++	char *statusptr = tempstatus;
 +	if (block->signal)
-+		*output++ = block->signal;
- 	strcpy(output, block->icon);
++		*statusptr++ = block->signal;
++	strcpy(statusptr, block->icon);
  	FILE *cmdf = popen(block->command, "r");
  	if (!cmdf)
-@@ -102,15 +105,18 @@ void getsigcmds(unsigned int signal)
+ 		return;
+ 	int i = strlen(block->icon);
+-	fgets(tempstatus+i, CMDLENGTH-i-delimLen, cmdf);
+-	i = strlen(tempstatus);
++	fgets(statusptr+i, CMDLENGTH-i-delimLen, cmdf);
++	i = strlen(statusptr);
+ 	//if block and command output are both not empty
+ 	if (i != 0) {
+ 		//only chop off newline if one is present at the end
+ 		i = tempstatus[i-1] == '\n' ? i-1 : i;
+ 		if (delim[0] != '\0') {
+-			strncpy(tempstatus+i, delim, delimLen);
++			strncpy(statusptr+i, delim, delimLen);
+ 		}
+ 		else
+ 			tempstatus[i++] = '\0';
++		strcpy(output, tempstatus);
+ 	}
+-	strcpy(output, tempstatus);
+ 	pclose(cmdf);
+ }
+ 
+@@ -103,15 +107,18 @@ void getsigcmds(unsigned int signal)
  
  void setupsignals()
  {
@@ -66,7 +81,7 @@ index ded717c..78fdeb5 100644
  	}
  
  }
-@@ -178,10 +184,32 @@ void dummysighandler(int signum)
+@@ -179,10 +186,32 @@ void dummysighandler(int signum)
  }
  #endif
  
@@ -102,7 +117,7 @@ index ded717c..78fdeb5 100644
  }
  
  void termhandler()
-@@ -189,6 +217,11 @@ void termhandler()
+@@ -190,6 +219,11 @@ void termhandler()
  	statusContinue = 0;
  }
  
@@ -114,7 +129,7 @@ index ded717c..78fdeb5 100644
  int main(int argc, char** argv)
  {
  	for (int i = 0; i < argc; i++) {//Handle command line arguments
-@@ -205,6 +238,7 @@ int main(int argc, char** argv)
+@@ -206,6 +240,7 @@ int main(int argc, char** argv)
  	delim[delimLen++] = '\0';
  	signal(SIGTERM, termhandler);
  	signal(SIGINT, termhandler);
@@ -122,6 +137,3 @@ index ded717c..78fdeb5 100644
  	statusloop();
  #ifndef NO_X
  	XCloseDisplay(dpy);
--- 
-2.31.0
-

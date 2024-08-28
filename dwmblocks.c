@@ -1,8 +1,6 @@
-#include<errno.h>
 #include<stdlib.h>
 #include<stdio.h>
 #include<string.h>
-#include<time.h>
 #include<unistd.h>
 #include<signal.h>
 #include<sys/wait.h>
@@ -56,52 +54,35 @@ static void (*writestatus) () = pstdout;
 static char statusbar[LENGTH(blocks)][CMDLENGTH] = {0};
 static char statusstr[2][STATUSLENGTH];
 static int statusContinue = 1;
-
-int gcd(int a, int b)
-{
-	int temp;
-	while (b > 0){
-		temp = a % b;
-
-		a = b;
-		b = temp;
-	}
-	return a;
-}
+static int returnStatus = 0;
 
 //opens process *cmd and stores output in *output
 void getcmd(const Block *block, char *output)
 {
-	char *s;
+	//make sure status is same until output is ready
+	char tempstatus[CMDLENGTH] = {0};
+	char *statusptr = tempstatus;
 	if (block->signal)
-		*output++ = block->signal;
+		*statusptr++ = block->signal;
+	strcpy(statusptr, block->icon);
 	FILE *cmdf = popen(block->command, "r");
 	if (!cmdf)
 		return;
 	int i = strlen(block->icon);
-	char tmpstr[CMDLENGTH] = "";
-	do {
-		s = fgets(tmpstr, CMDLENGTH-i-delimLen, cmdf);
-	} while (!s && errno == EINTR);
-	if (fgetc(cmdf) != EOF) {
-		strncpy(&tmpstr[CMDLENGTH - i - delimLen - 4], "...", 4);
+	fgets(statusptr+i, CMDLENGTH-i-delimLen, cmdf);
+	i = strlen(statusptr);
+	//if block and command output are both not empty
+	if (i != 0) {
+		//only chop off newline if one is present at the end
+		i = tempstatus[i-1] == '\n' ? i-1 : i;
+		if (delim[0] != '\0') {
+			strncpy(statusptr+i, delim, delimLen);
+		}
+		else
+			tempstatus[i++] = '\0';
+		strcpy(output, tempstatus);
 	}
 	pclose(cmdf);
-
-	strcpy(output, block->icon);
-	strcpy(output+i, tmpstr);
-	i = strlen(output);
-	if (i == 0) {
-		//return if block and command output are both empty
-		return;
-	}
-	//only chop off newline if one is present at the end
-	i = output[i-1] == '\n' ? i-1 : i;
-	if (delim[0] != '\0') {
-		strncpy(output+i, delim, delimLen); 
-	}
-	else
-		output[i++] = '\0';
 }
 
 void getcmds(int time)
@@ -185,25 +166,15 @@ void pstdout()
 
 void statusloop()
 {
-	struct timespec tosleep;
 	setupsignals();
-	unsigned int i = 0, interval = 0;
-    for(unsigned int i = 0; i < LENGTH(blocks); i++){
-        if(blocks[i].interval){
-            interval = gcd(blocks[i].interval, interval);
-        }
-    }
+	int i = 0;
 	getcmds(-1);
 	while (1) {
-		tosleep.tv_sec = interval;
-		tosleep.tv_nsec = 0;
-		if (nanosleep(&tosleep, &tosleep) == -1) {
-			continue;
-		}
 		getcmds(i++);
 		writestatus();
 		if (!statusContinue)
 			break;
+		sleep(1.0);
 	}
 }
 
