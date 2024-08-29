@@ -1,3 +1,4 @@
+#include<errno.h>
 #include<stdlib.h>
 #include<stdio.h>
 #include<string.h>
@@ -69,7 +70,7 @@ void getcmd(const Block *block, char *output)
 	if (!cmdf)
 		return;
 	int i = strlen(block->icon);
-	fgets(statusptr+i, CMDLENGTH-i-delimLen, cmdf);
+	while(!fgets(statusptr+i, CMDLENGTH-i-delimLen, cmdf) && errno == EINTR);
 	if (fgetc(cmdf) != EOF) {
 		strncpy(statusptr + CMDLENGTH - delimLen - 4, "...", 4);
 	}

@@ -1,8 +1,11 @@
 diff --git a/dwmblocks.c b/dwmblocks.c
-index c8f77b7..3828be3 100644
+index c8f77b7..0343627 100644
 --- a/dwmblocks.c
 +++ b/dwmblocks.c
-@@ -3,6 +3,7 @@
+@@ -1,8 +1,10 @@
++#include<errno.h>
+ #include<stdlib.h>
+ #include<stdio.h>
  #include<string.h>
  #include<unistd.h>
  #include<signal.h>
@@ -10,7 +13,7 @@ index c8f77b7..3828be3 100644
  #ifndef NO_X
  #include<X11/Xlib.h>
  #endif
-@@ -27,14 +28,14 @@ typedef struct {
+@@ -27,14 +29,14 @@ typedef struct {
  #ifndef __OpenBSD__
  void dummysighandler(int num);
  #endif
@@ -27,7 +30,7 @@ index c8f77b7..3828be3 100644
  void pstdout();
  #ifndef NO_X
  void setroot();
-@@ -60,19 +61,22 @@ void getcmd(const Block *block, char *output)
+@@ -60,19 +62,22 @@ void getcmd(const Block *block, char *output)
  {
  	//make sure status is same until output is ready
  	char tempstatus[CMDLENGTH] = {0};
@@ -42,7 +45,7 @@ index c8f77b7..3828be3 100644
  	int i = strlen(block->icon);
 -	fgets(tempstatus+i, CMDLENGTH-i-delimLen, cmdf);
 -	i = strlen(tempstatus);
-+	fgets(statusptr+i, CMDLENGTH-i-delimLen, cmdf);
++	while(!fgets(statusptr+i, CMDLENGTH-i-delimLen, cmdf) && errno == EINTR);
 +	i = strlen(statusptr);
  	//if block and command output are both not empty
  	if (i != 0) {
@@ -54,7 +57,7 @@ index c8f77b7..3828be3 100644
  		}
  		else
  			tempstatus[i++] = '\0';
-@@ -103,15 +107,18 @@ void getsigcmds(unsigned int signal)
+@@ -103,15 +108,18 @@ void getsigcmds(unsigned int signal)
  
  void setupsignals()
  {
@@ -75,7 +78,7 @@ index c8f77b7..3828be3 100644
  	}
  
  }
-@@ -179,10 +186,32 @@ void dummysighandler(int signum)
+@@ -179,10 +187,32 @@ void dummysighandler(int signum)
  }
  #endif
  
@@ -111,7 +114,7 @@ index c8f77b7..3828be3 100644
  }
  
  void termhandler()
-@@ -190,6 +219,11 @@ void termhandler()
+@@ -190,6 +220,11 @@ void termhandler()
  	statusContinue = 0;
  }
  
@@ -123,7 +126,7 @@ index c8f77b7..3828be3 100644
  int main(int argc, char** argv)
  {
  	for (int i = 0; i < argc; i++) {//Handle command line arguments
-@@ -206,6 +240,7 @@ int main(int argc, char** argv)
+@@ -206,6 +241,7 @@ int main(int argc, char** argv)
  	delim[delimLen++] = '\0';
  	signal(SIGTERM, termhandler);
  	signal(SIGINT, termhandler);
