@@ -1,5 +1,17 @@
 #!/bin/sh
 
+case "$(playerctl status -s)" in
+  # Media players generally show the pause icon while playing and the play icon
+  # while paused.
+  "Paused")
+    STATUS="▶️"
+    [ "$NOMETADATA" ] && STATUS="$STATUS Media playback paused" ;;
+  "Playing")
+    STATUS="⏸️"
+    [ "$NOMETADATA" ] && STATUS="$STATUS Currently playing media" ;;
+  *) exit 1 ;;
+esac
+
 case $BUTTON in
   1) playerctl previous ;;
   2) playerctl play-pause ;;
@@ -14,17 +26,6 @@ TITLE="$(playerctl -s metadata title)"
 [ -n "$ARTIST" ] && [ -n "$TITLE" ] && SEPARATOR=" - "
 [ -z "$ARTIST" ] && [ -z "$TITLE" ] && NOMETADATA=true
 
-case "$(playerctl status -s)" in
-  # Media players generally show the pause icon while playing and the play icon
-  # while paused.
-  "Paused")
-    STATUS="▶️"
-    [ "$NOMETADATA" ] && STATUS="$STATUS Media playback paused" ;;
-  "Playing")
-    STATUS="⏸️"
-    [ "$NOMETADATA" ] && STATUS="$STATUS Currently playing media" ;;
-  *) exit 1 ;;
-esac
 
 printf "%s %s%s%s" "$STATUS" "$TITLE" "$SEPARATOR" "$ARTIST"
 
