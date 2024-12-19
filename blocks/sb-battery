@@ -2,67 +2,50 @@
 
 # Prints all batteries, their percentage remaining and an emoji corresponding
 # to charge status (🔌 for plugged up, 🔋 for discharging on battery, etc.).
-#
-# Depends on xbacklight.
 
-toggle_presentation_mode() {
-  if [ -z "$present" ]; then
-    xset s off; xset -dpms
-  else
-    xset s on; xset +dpms
-  fi
+calc_remaining_time() {
+  power_now="$(cat "$1/power_now")"
+  [ "$power_now" -eq 0 ] && return
+  energy_now="$(cat "$1/energy_now")"
+  timeleft="$(printf "%.2f" "$((100 * energy_now/power_now))e-2")"
+  h=${timeleft%.*}
+  [ -z "$h" ] && h=0
+  m=${timeleft#*.}
+  m="$(printf "%.0f" "$((${m#0*}*60))e-2")"
+  [ "$m" -lt 10 ] && m="0$m"
+  timeleft="($h:$m)"
+  printf "%s" "$timeleft"
 }
 
-# If the X screensaver timeout is zero, presenation mode must be on
-case "$(xset q | awk '/timeout/{print $2}')" in
-  0) present=" 🖥" ;;
-  *) present="" ;;
-esac
-
 case $BUTTON in
-  1) toggle_presentation_mode ;;
   3) setsid -f "$TERMINAL" -e "$EDITOR" "$0" ;;
-  4) xbacklight -inc 1 ;;
-  5) xbacklight -dec 1 ;;
 esac
-
-# Get the brightness in percentage
-brightness=$(xbacklight -get)
 
 # Loop through all attached batteries and format the info
 for battery in /sys/class/power_supply/BAT?*; do
   # Sets up the status and capacity
   case "$(cat "$battery/status")" in
     "Full") status="⚡" ;;
-    "Discharging") status="🔋" ;;
+    "Discharging") 
+        # If discharging, obtain battery remaining time and warn if low
+        if [ "$capacity" -le 20 ]; then
+          status="🪫"
+          [ "$capacity" -le 10 ] && warn="❗" || warn="❕"
+        else
+          status="🔋"
+        fi
+        timeleft=$(calc_remaining_time "$battery")
+        [ -n "$timeleft" ] && timeleft=" $timeleft"
+      ;;
     "Charging") status="🔌" ;;
     "Not charging") status="🛑" ;;
     "Unknown") status="❔" ;;
   esac
 
   capacity=$(cat "$battery/capacity")
-  # If discharging, obtain battery remaining time and warn if low
-  if [ "$status" = "🔋" ]; then
-    if [ "$capacity" -le 20 ]; then
-      status="🪫"
-      [ "$capacity" -le 10 ] && warn="❗" || warn="❕"
-    fi
 
-    # Get battery remaining time
-    energy_now="$(cat "$battery/energy_now")"
-    power_now="$(cat "$battery/power_now")"
-    if [ "$power_now" -ne 0 ]; then
-      timeleft="$(printf "%.2f" "$((100 * energy_now/power_now))e-2")"
-      h=${timeleft%.*}
-      [ -z "$h" ] && h=0
-      m=${timeleft#*.}
-      m="$(printf "%.0f" "$((${m#0*}*60))e-2")"
-      [ "$m" -lt 10 ] && m="0$m"
-      timeleft="($h:$m)"
-    else
-      timeleft="(?:?)"
-    fi
-  fi
   # Prints the info
-  printf "🔆 %s%% %s%s %s %d%%%s" "$brightness" "$status" "$warn" "$timeleft" "$capacity" "$present"; unset warn
+  printf "%s%s%s %d%%" "$status" "$warn" "$timeleft" "$capacity"; unset warn
 done
+exit 0
+
