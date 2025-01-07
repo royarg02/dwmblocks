@@ -5,10 +5,10 @@ case "$(playerctl status -s)" in
   # while paused.
   "Paused")
     STATUS="▶️"
-    [ "$NOMETADATA" ] && STATUS="$STATUS Media playback paused" ;;
+    NOMETADATATITLE="Media playback paused" ;;
   "Playing")
     STATUS="⏸️"
-    [ "$NOMETADATA" ] && STATUS="$STATUS Currently playing media" ;;
+    NOMETADATATITLE="Currently playing media" ;;
   *) exit 1 ;;
 esac
 
@@ -24,8 +24,7 @@ ARTIST="$(playerctl -s metadata artist)"
 TITLE="$(playerctl -s metadata title)"
 
 [ -n "$ARTIST" ] && [ -n "$TITLE" ] && SEPARATOR=" - "
-[ -z "$ARTIST" ] && [ -z "$TITLE" ] && NOMETADATA=true
-
+[ -z "$ARTIST" ] && [ -z "$TITLE" ] && TITLE="$NOMETADATATITLE"
 
 printf "%s %s%s%s" "$STATUS" "$TITLE" "$SEPARATOR" "$ARTIST"
 
