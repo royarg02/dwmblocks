@@ -35,8 +35,8 @@ void setupsignals();
 void sighandler(int signum, siginfo_t *si, void *ucontext);
 int getstatus(char *str, char *last);
 void statusloop();
-void termhandler();
 void chldhandler();
+void termhandler();
 void pstdout();
 #ifndef NO_X
 void setroot();
@@ -66,24 +66,31 @@ void getcmd(const Block *block, char *output)
 	if (block->signal)
 		*statusptr++ = block->signal;
 	strcpy(statusptr, block->icon);
+	statusptr += strlen(block->icon);
 	FILE *cmdf = popen(block->command, "r");
 	if (!cmdf)
 		return;
-	int i = strlen(block->icon);
-	while(!fgets(statusptr+i, CMDLENGTH-i-delimLen, cmdf) && errno == EINTR);
+	// CMDLENGTH = signal + icon + max length for cmd output + signal + delimlen + \0
+	// where tempstatus = signal + icon
+	while(!fgets(statusptr, CMDLENGTH - strlen(tempstatus) - 1 - delimLen, cmdf) && errno == EINTR);
+	int statuslen = strlen(tempstatus);
+	statusptr = tempstatus + statuslen;
+	// End the command output with ellipsis if it is not entirely copied
 	if (fgetc(cmdf) != EOF) {
-		strncpy(statusptr + CMDLENGTH - delimLen - 4, "...", 4);
+		strncpy(statusptr - 3, "...", 4);
 	}
-	i = strlen(statusptr);
-	//if block and command output are both not empty
-	if (i != 0) {
+	//if block and command output after removing the signal char are both not empty
+	if (statuslen - 1 != 0) {
 		//only chop off newline if one is present at the end
-		i = tempstatus[i-1] == '\n' ? i-1 : i;
+		if (*(statusptr - 1) == '\n')
+			--statusptr;
+		if (block->signal)
+			*statusptr++ = block->signal;
 		if (delim[0] != '\0') {
-			strncpy(statusptr+i, delim, delimLen);
+			strncpy(statusptr, delim, delimLen);
 		}
 		else
-			tempstatus[i++] = '\0';
+			*statusptr = '\0';
 	}
 	strcpy(output, tempstatus);
 	pclose(cmdf);
@@ -111,13 +118,13 @@ void getsigcmds(unsigned int signal)
 
 void setupsignals()
 {
-	struct sigaction sa = { .sa_sigaction = sighandler, .sa_flags = SA_SIGINFO };
+    struct sigaction sa = { .sa_sigaction = sighandler, .sa_flags = SA_SIGINFO };
 #ifndef __OpenBSD__
 	    /* initialize all real time signals with dummy handler */
     for (int i = SIGRTMIN; i <= SIGRTMAX; i++) {
         signal(i, dummysighandler);
-		sigaddset(&sa.sa_mask, i);
-	}
+        sigaddset(&sa.sa_mask, i);
+    }
 #endif
 
 	for (unsigned int i = 0; i < LENGTH(blocks); i++) {

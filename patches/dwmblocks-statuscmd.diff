@@ -1,5 +1,5 @@
 diff --git a/dwmblocks.c b/dwmblocks.c
-index c8f77b7..0343627 100644
+index c8f77b7..ecbd691 100644
 --- a/dwmblocks.c
 +++ b/dwmblocks.c
 @@ -1,8 +1,10 @@
@@ -13,7 +13,7 @@ index c8f77b7..0343627 100644
  #ifndef NO_X
  #include<X11/Xlib.h>
  #endif
-@@ -27,14 +29,14 @@ typedef struct {
+@@ -27,13 +29,13 @@ typedef struct {
  #ifndef __OpenBSD__
  void dummysighandler(int num);
  #endif
@@ -25,12 +25,11 @@ index c8f77b7..0343627 100644
 +void sighandler(int signum, siginfo_t *si, void *ucontext);
  int getstatus(char *str, char *last);
  void statusloop();
- void termhandler();
 +void chldhandler();
+ void termhandler();
  void pstdout();
  #ifndef NO_X
- void setroot();
-@@ -60,19 +62,22 @@ void getcmd(const Block *block, char *output)
+@@ -60,22 +62,35 @@ void getcmd(const Block *block, char *output)
  {
  	//make sure status is same until output is ready
  	char tempstatus[CMDLENGTH] = {0};
@@ -39,36 +38,54 @@ index c8f77b7..0343627 100644
 +	if (block->signal)
 +		*statusptr++ = block->signal;
 +	strcpy(statusptr, block->icon);
++	statusptr += strlen(block->icon);
  	FILE *cmdf = popen(block->command, "r");
  	if (!cmdf)
  		return;
- 	int i = strlen(block->icon);
+-	int i = strlen(block->icon);
 -	fgets(tempstatus+i, CMDLENGTH-i-delimLen, cmdf);
 -	i = strlen(tempstatus);
-+	while(!fgets(statusptr+i, CMDLENGTH-i-delimLen, cmdf) && errno == EINTR);
-+	i = strlen(statusptr);
- 	//if block and command output are both not empty
- 	if (i != 0) {
+-	//if block and command output are both not empty
+-	if (i != 0) {
++	// CMDLENGTH = signal + icon + max length for cmd output + signal + delimlen + \0
++	// where tempstatus = signal + icon
++	while(!fgets(statusptr, CMDLENGTH - strlen(tempstatus) - 1 - delimLen, cmdf) && errno == EINTR);
++	int statuslen = strlen(tempstatus);
++	statusptr = tempstatus + statuslen;
++	// End the command output with ellipsis if it is not entirely copied
++	if (fgetc(cmdf) != EOF) {
++		strncpy(statusptr - 3, "...", 4);
++	}
++	//if block and command output after removing the signal char are both not empty
++	if (statuslen - 1 != 0) {
  		//only chop off newline if one is present at the end
- 		i = tempstatus[i-1] == '\n' ? i-1 : i;
+-		i = tempstatus[i-1] == '\n' ? i-1 : i;
++		if (*(statusptr - 1) == '\n')
++			--statusptr;
++		if (block->signal)
++			*statusptr++ = block->signal;
  		if (delim[0] != '\0') {
 -			strncpy(tempstatus+i, delim, delimLen);
-+			strncpy(statusptr+i, delim, delimLen);
++			strncpy(statusptr, delim, delimLen);
  		}
  		else
- 			tempstatus[i++] = '\0';
-@@ -103,15 +108,18 @@ void getsigcmds(unsigned int signal)
+-			tempstatus[i++] = '\0';
++			*statusptr = '\0';
+ 	}
+ 	strcpy(output, tempstatus);
+ 	pclose(cmdf);
+@@ -103,15 +118,18 @@ void getsigcmds(unsigned int signal)
  
  void setupsignals()
  {
-+	struct sigaction sa = { .sa_sigaction = sighandler, .sa_flags = SA_SIGINFO };
++    struct sigaction sa = { .sa_sigaction = sighandler, .sa_flags = SA_SIGINFO };
  #ifndef __OpenBSD__
  	    /* initialize all real time signals with dummy handler */
 -    for (int i = SIGRTMIN; i <= SIGRTMAX; i++)
 +    for (int i = SIGRTMIN; i <= SIGRTMAX; i++) {
          signal(i, dummysighandler);
-+		sigaddset(&sa.sa_mask, i);
-+	}
++        sigaddset(&sa.sa_mask, i);
++    }
  #endif
  
  	for (unsigned int i = 0; i < LENGTH(blocks); i++) {
@@ -78,7 +95,7 @@ index c8f77b7..0343627 100644
  	}
  
  }
-@@ -179,10 +187,32 @@ void dummysighandler(int signum)
+@@ -179,10 +197,32 @@ void dummysighandler(int signum)
  }
  #endif
  
@@ -114,7 +131,7 @@ index c8f77b7..0343627 100644
  }
  
  void termhandler()
-@@ -190,6 +220,11 @@ void termhandler()
+@@ -190,6 +230,11 @@ void termhandler()
  	statusContinue = 0;
  }
  
@@ -126,7 +143,7 @@ index c8f77b7..0343627 100644
  int main(int argc, char** argv)
  {
  	for (int i = 0; i < argc; i++) {//Handle command line arguments
-@@ -206,6 +241,7 @@ int main(int argc, char** argv)
+@@ -206,6 +251,7 @@ int main(int argc, char** argv)
  	delim[delimLen++] = '\0';
  	signal(SIGTERM, termhandler);
  	signal(SIGINT, termhandler);
