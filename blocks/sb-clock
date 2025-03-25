@@ -4,7 +4,7 @@
 # Thu 22 Jul 10:45
 
 case $BUTTON in
-  1) setsid -f "$TERMINAL" -e watch -tn1 "sb-clock-display" ;;
+  1) setsid -f "$TERMINAL" -e watch -prtxn1 "sb-clock-display" ;;
   3) setsid -f "$TERMINAL" -e "$EDITOR" "$0" ;;
 esac
 
