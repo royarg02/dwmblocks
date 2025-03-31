@@ -3,7 +3,15 @@
 # Prints the current volume of default wireplumbler source.
 
 SOURCE="@DEFAULT_AUDIO_SOURCE@"
-command -v ncpamixer > /dev/null 2>&1 && controller="ncpamixer" || controller="pulsemixer"
+command -v ncpamixer > /dev/null 2>&1 && CONTROLLER="ncpamixer" || CONTROLLER="pulsemixer"
+
+case $BUTTON in
+  1) wpctl set-mute "$SOURCE" toggle ;;
+  2) setsid -f "$TERMINAL" -e "$CONTROLLER" ;;
+  3) setsid -f "$TERMINAL" -e "$EDITOR" "$0";;
+  4) wpctl set-volume "$SOURCE" 5%+ ;;
+  5) wpctl set-volume "$SOURCE" 5%- ;;
+esac
 
 until [ -n "$vol" ]; do
   vol="$(wpctl get-volume $SOURCE)"
@@ -11,14 +19,6 @@ done
 
 level="$(echo "$vol" | cut -d' ' -f2 | xargs -I @ printf "%0.f" @e2)"
 muted="$(echo "$vol" | cut -d' ' -f3)"
-
-case $BUTTON in
-  1) wpctl set-mute "$SOURCE" toggle ;;
-  2) setsid -f "$TERMINAL" -e "$controller" ;;
-  3) setsid -f "$TERMINAL" -e "$EDITOR" "$0";;
-  4) wpctl set-volume "$SOURCE" 5%+ ;;
-  5) wpctl set-volume "$SOURCE" 5%- ;;
-esac
 
 [ "$muted" ] && icon=🙊 || icon=🎙
 

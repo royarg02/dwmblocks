@@ -3,6 +3,10 @@
 # Prints all batteries, their percentage remaining and an emoji corresponding
 # to charge status (🔌 for plugged up, 🔋 for discharging on battery, etc.).
 
+case $BUTTON in
+  3) setsid -f "$TERMINAL" -e "$EDITOR" "$0" ;;
+esac
+
 calc_remaining_time() {
   power_now="$(cat "$1/power_now")"
   [ "$power_now" -eq 0 ] && return
@@ -16,10 +20,6 @@ calc_remaining_time() {
   timeleft="($h:$m)"
   printf "%s" "$timeleft"
 }
-
-case $BUTTON in
-  3) setsid -f "$TERMINAL" -e "$EDITOR" "$0" ;;
-esac
 
 # Loop through all attached batteries and format the info
 for battery in /sys/class/power_supply/BAT?*; do

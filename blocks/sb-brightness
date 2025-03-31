@@ -4,6 +4,8 @@
 #
 # Depends on xbacklight.
 
+present=""
+
 toggle_presentation_mode() {
   if [ -z "$present" ]; then
     xset s off; xset -dpms
@@ -13,10 +15,9 @@ toggle_presentation_mode() {
 }
 
 # If the X screensaver timeout is zero, presenation mode must be on
-case "$(xset q | awk '/timeout/{print $2}')" in
-  0) present=" 🖥" ;;
-  *) present="" ;;
-esac
+if [ "$(xset q | awk '/timeout/{print $2}')" = 0 ]; then
+  present=" 🖥"
+fi
 
 case $BUTTON in
   1) toggle_presentation_mode ;;
