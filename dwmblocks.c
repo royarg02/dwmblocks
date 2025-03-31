@@ -1,4 +1,3 @@
-#include<errno.h>
 #include<stdlib.h>
 #include<stdio.h>
 #include<string.h>
@@ -35,8 +34,8 @@ void setupsignals();
 void sighandler(int signum, siginfo_t *si, void *ucontext);
 int getstatus(char *str, char *last);
 void statusloop();
-void chldhandler();
 void termhandler();
+void chldhandler();
 void pstdout();
 #ifndef NO_X
 void setroot();
@@ -66,33 +65,33 @@ void getcmd(const Block *block, char *output)
 	if (block->signal)
 		*statusptr++ = block->signal;
 	strcpy(statusptr, block->icon);
-	statusptr += strlen(block->icon);
 	FILE *cmdf = popen(block->command, "r");
 	if (!cmdf)
 		return;
-	// CMDLENGTH = signal + icon + max length for cmd output + signal + delimlen + \0
-	// where tempstatus = signal + icon
-	while(!fgets(statusptr, CMDLENGTH - strlen(tempstatus) - 1 - delimLen, cmdf) && errno == EINTR);
-	int statuslen = strlen(tempstatus);
-	statusptr = tempstatus + statuslen;
-	// End the command output with ellipsis if it is not entirely copied
-	if (fgetc(cmdf) != EOF) {
-		strncpy(statusptr - 3, "...", 4);
-	}
-	//if block and command output after removing the signal char are both not empty
-	if (statuslen - 1 != 0) {
+	int i = strlen(block->icon);
+	// CMDLENGTH = signal(1) + icon + max length for cmd output + signal(1) + delimLen + \0
+	// where statusptr = signal
+	fgets(statusptr+i, CMDLENGTH-i-delimLen-2, cmdf);
+	// i = icon + cmd
+	i = strlen(statusptr);
+	//if block and command output are both not empty
+	if (i != 0) {
 		//only chop off newline if one is present at the end
-		if (*(statusptr - 1) == '\n')
-			--statusptr;
-		if (block->signal)
-			*statusptr++ = block->signal;
+		i = tempstatus[i] == '\n' ? i-1 : i;
+		// End the cmd output with ellipsis if it is not entirely copied
+		if (fgetc(cmdf) != EOF) {
+			strncpy(statusptr + i - 3, "...", 4);
+		}
+		if (block->signal) {
+			*(statusptr + i) = block->signal;
+		}
 		if (delim[0] != '\0') {
-			strncpy(statusptr, delim, delimLen);
+			strncpy(statusptr+i+1, delim, delimLen);
 		}
 		else
-			*statusptr = '\0';
+			tempstatus[i+2] = '\0';
+		strcpy(output, tempstatus);
 	}
-	strcpy(output, tempstatus);
 	pclose(cmdf);
 }
 
